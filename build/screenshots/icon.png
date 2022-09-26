@@ -1,0 +1,830 @@
+_html_community__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ansi-html-community */ 7716);
+/* harmony import */ var ansi_html_community__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(ansi_html_community__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var html_entities__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! html-entities */ 4948);
+/* harmony import */ var html_entities__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(html_entities__WEBPACK_IMPORTED_MODULE_1__);
+// The error overlay is inspired (and mostly copied) from Create React App (https://github.com/facebookincubator/create-react-app)
+// They, in turn, got inspired by webpack-hot-middleware (https://github.com/glenjamin/webpack-hot-middleware).
+
+
+var colors = {
+  reset: ["transparent", "transparent"],
+  black: "181818",
+  red: "E36049",
+  green: "B3CB74",
+  yellow: "FFD080",
+  blue: "7CAFC2",
+  magenta: "7FACCA",
+  cyan: "C3C2EF",
+  lightgrey: "EBE7E3",
+  darkgrey: "6D7891"
+};
+/** @type {HTMLIFrameElement | null | undefined} */
+
+var iframeContainerElement;
+/** @type {HTMLDivElement | null | undefined} */
+
+var containerElement;
+/** @type {Array<(element: HTMLDivElement) => void>} */
+
+var onLoadQueue = [];
+/** @type {TrustedTypePolicy | undefined} */
+
+var overlayTrustedTypesPolicy;
+ansi_html_community__WEBPACK_IMPORTED_MODULE_0___default().setColors(colors);
+/**
+ * @param {string | null} trustedTypesPolicyName
+ */
+
+function createContainer(trustedTypesPolicyName) {
+  // Enable Trusted Types if they are available in the current browser.
+  if (window.trustedTypes) {
+    overlayTrustedTypesPolicy = window.trustedTypes.createPolicy(trustedTypesPolicyName || "webpack-dev-server#overlay", {
+      createHTML: function createHTML(value) {
+        return value;
+      }
+    });
+  }
+
+  iframeContainerElement = document.createElement("iframe");
+  iframeContainerElement.id = "webpack-dev-server-client-overlay";
+  iframeContainerElement.src = "about:blank";
+  iframeContainerElement.style.position = "fixed";
+  iframeContainerElement.style.left = 0;
+  iframeContainerElement.style.top = 0;
+  iframeContainerElement.style.right = 0;
+  iframeContainerElement.style.bottom = 0;
+  iframeContainerElement.style.width = "100vw";
+  iframeContainerElement.style.height = "100vh";
+  iframeContainerElement.style.border = "none";
+  iframeContainerElement.style.zIndex = 9999999999;
+
+  iframeContainerElement.onload = function () {
+    containerElement =
+    /** @type {Document} */
+
+    /** @type {HTMLIFrameElement} */
+    iframeContainerElement.contentDocument.createElement("div");
+    containerElement.id = "webpack-dev-server-client-overlay-div";
+    containerElement.style.position = "fixed";
+    containerElement.style.boxSizing = "border-box";
+    containerElement.style.left = 0;
+    containerElement.style.top = 0;
+    containerElement.style.right = 0;
+    containerElement.style.bottom = 0;
+    containerElement.style.width = "100vw";
+    containerElement.style.height = "100vh";
+    containerElement.style.backgroundColor = "rgba(0, 0, 0, 0.85)";
+    containerElement.style.color = "#E8E8E8";
+    containerElement.style.fontFamily = "Menlo, Consolas, monospace";
+    containerElement.style.fontSize = "large";
+    containerElement.style.padding = "2rem";
+    containerElement.style.lineHeight = "1.2";
+    containerElement.style.whiteSpace = "pre-wrap";
+    containerElement.style.overflow = "auto";
+    var headerElement = document.createElement("span");
+    headerElement.innerText = "Compiled with problems:";
+    var closeButtonElement = document.createElement("button");
+    closeButtonElement.innerText = "X";
+    closeButtonElement.style.background = "transparent";
+    closeButtonElement.style.border = "none";
+    closeButtonElement.style.fontSize = "20px";
+    closeButtonElement.style.fontWeight = "bold";
+    closeButtonElement.style.color = "white";
+    closeButtonElement.style.cursor = "pointer";
+    closeButtonElement.style.cssFloat = "right"; // @ts-ignore
+
+    closeButtonElement.style.styleFloat = "right";
+    closeButtonElement.addEventListener("click", function () {
+      hide();
+    });
+    containerElement.appendChild(headerElement);
+    containerElement.appendChild(closeButtonElement);
+    containerElement.appendChild(document.createElement("br"));
+    containerElement.appendChild(document.createElement("br"));
+    /** @type {Document} */
+
+    /** @type {HTMLIFrameElement} */
+
+    iframeContainerElement.contentDocument.body.appendChild(containerElement);
+    onLoadQueue.forEach(function (onLoad) {
+      onLoad(
+      /** @type {HTMLDivElement} */
+      containerElement);
+    });
+    onLoadQueue = [];
+    /** @type {HTMLIFrameElement} */
+
+    iframeContainerElement.onload = null;
+  };
+
+  document.body.appendChild(iframeContainerElement);
+}
+/**
+ * @param {(element: HTMLDivElement) => void} callback
+ * @param {string | null} trustedTypesPolicyName
+ */
+
+
+function ensureOverlayExists(callback, trustedTypesPolicyName) {
+  if (containerElement) {
+    // Everything is ready, call the callback right away.
+    callback(containerElement);
+    return;
+  }
+
+  onLoadQueue.push(callback);
+
+  if (iframeContainerElement) {
+    return;
+  }
+
+  createContainer(trustedTypesPolicyName);
+} // Successful compilation.
+
+
+function hide() {
+  if (!iframeContainerElement) {
+    return;
+  } // Clean up and reset internal state.
+
+
+  document.body.removeChild(iframeContainerElement);
+  iframeContainerElement = null;
+  containerElement = null;
+}
+/**
+ * @param {string} type
+ * @param {string  | { file?: string, moduleName?: string, loc?: string, message?: string }} item
+ * @returns {{ header: string, body: string }}
+ */
+
+
+function formatProblem(type, item) {
+  var header = type === "warning" ? "WARNING" : "ERROR";
+  var body = "";
+
+  if (typeof item === "string") {
+    body += item;
+  } else {
+    var file = item.file || ""; // eslint-disable-next-line no-nested-ternary
+
+    var moduleName = item.moduleName ? item.moduleName.indexOf("!") !== -1 ? "".concat(item.moduleName.replace(/^(\s|\S)*!/, ""), " (").concat(item.moduleName, ")") : "".concat(item.moduleName) : "";
+    var loc = item.loc;
+    header += "".concat(moduleName || file ? " in ".concat(moduleName ? "".concat(moduleName).concat(file ? " (".concat(file, ")") : "") : file).concat(loc ? " ".concat(loc) : "") : "");
+    body += item.message || "";
+  }
+
+  return {
+    header: header,
+    body: body
+  };
+} // Compilation with errors (e.g. syntax error or missing modules).
+
+/**
+ * @param {string} type
+ * @param {Array<string  | { file?: string, moduleName?: string, loc?: string, message?: string }>} messages
+ * @param {string | null} trustedTypesPolicyName
+ */
+
+
+function show(type, messages, trustedTypesPolicyName) {
+  ensureOverlayExists(function () {
+    messages.forEach(function (message) {
+      var entryElement = document.createElement("div");
+      var typeElement = document.createElement("span");
+
+      var _formatProblem = formatProblem(type, message),
+          header = _formatProblem.header,
+          body = _formatProblem.body;
+
+      typeElement.innerText = header;
+      typeElement.style.color = "#".concat(colors.red); // Make it look similar to our terminal.
+
+      var text = ansi_html_community__WEBPACK_IMPORTED_MODULE_0___default()((0,html_entities__WEBPACK_IMPORTED_MODULE_1__.encode)(body));
+      var messageTextNode = document.createElement("div");
+      messageTextNode.innerHTML = overlayTrustedTypesPolicy ? overlayTrustedTypesPolicy.createHTML(text) : text;
+      entryElement.appendChild(typeElement);
+      entryElement.appendChild(document.createElement("br"));
+      entryElement.appendChild(document.createElement("br"));
+      entryElement.appendChild(messageTextNode);
+      entryElement.appendChild(document.createElement("br"));
+      entryElement.appendChild(document.createElement("br"));
+      /** @type {HTMLDivElement} */
+
+      containerElement.appendChild(entryElement);
+    });
+  }, trustedTypesPolicyName);
+}
+
+
+
+/***/ })å˝ˇˇè˝ˇˇñ˝ˇˇÅx)  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Ωwebpack://./node_modules/webpack-dev-server/client/overlay.js  // The error overlay is inspired (and mostly copied) from Create React App (https://github.com/facebookincubator/create-react-app)
+// They, in turn, got inspired by webpack-hot-middleware (https://github.com/glenjamin/webpack-hot-middleware).
+import ansiHTML from "ansi-html-community";
+import { encode } from "html-entities";
+var colors = {
+  reset: ["transparent", "transparent"],
+  black: "181818",
+  red: "E36049",
+  green: "B3CB74",
+  yellow: "FFD080",
+  blue: "7CAFC2",
+  magenta: "7FACCA",
+  cyan: "C3C2EF",
+  lightgrey: "EBE7E3",
+  darkgrey: "6D7891"
+};
+/** @type {HTMLIFrameElement | null | undefined} */
+
+var iframeContainerElement;
+/** @type {HTMLDivElement | null | undefined} */
+
+var containerElement;
+/** @type {Array<(element: HTMLDivElement) => void>} */
+
+var onLoadQueue = [];
+/** @type {TrustedTypePolicy | undefined} */
+
+var overlayTrustedTypesPolicy;
+ansiHTML.setColors(colors);
+/**
+ * @param {string | null} trustedTypesPolicyName
+ */
+
+function createContainer(trustedTypesPolicyName) {
+  // Enable Trusted Types if they are available in the current browser.
+  if (window.trustedTypes) {
+    overlayTrustedTypesPolicy = window.trustedTypes.createPolicy(trustedTypesPolicyName || "webpack-dev-server#overlay", {
+      createHTML: function createHTML(value) {
+        return value;
+      }
+    });
+  }
+
+  iframeContainerElement = document.createElement("iframe");
+  iframeContainerElement.id = "webpack-dev-server-client-overlay";
+  iframeContainerElement.src = "about:blank";
+  iframeContainerElement.style.position = "fixed";
+  iframeContainerElement.style.left = 0;
+  iframeContainerElement.style.top = 0;
+  iframeContainerElement.style.right = 0;
+  iframeContainerElement.style.bottom = 0;
+  iframeContainerElement.style.width = "100vw";
+  iframeContainerElement.style.height = "100vh";
+  iframeContainerElement.style.border = "none";
+  iframeContainerElement.style.zIndex = 9999999999;
+
+  iframeContainerElement.onload = function () {
+    containerElement =
+    /** @type {Document} */
+
+    /** @type {HTMLIFrameElement} */
+    iframeContainerElement.contentDocument.createElement("div");
+    containerElement.id = "webpack-dev-server-client-overlay-div";
+    containerElement.style.position = "fixed";
+    containerElement.style.boxSizing = "border-box";
+    containerElement.style.left = 0;
+    containerElement.style.top = 0;
+    containerElement.style.right = 0;
+    containerElement.style.bottom = 0;
+    containerElement.style.width = "100vw";
+    containerElement.style.height = "100vh";
+    containerElement.style.backgroundColor = "rgba(0, 0, 0, 0.85)";
+    containerElement.style.color = "#E8E8E8";
+    containerElement.style.fontFamily = "Menlo, Consolas, monospace";
+    containerElement.style.fontSize = "large";
+    containerElement.style.padding = "2rem";
+    containerElement.style.lineHeight = "1.2";
+    containerElement.style.whiteSpace = "pre-wrap";
+    containerElement.style.overflow = "auto";
+    var headerElement = document.createElement("span");
+    headerElement.innerText = "Compiled with problems:";
+    var closeButtonElement = document.createElement("button");
+    closeButtonElement.innerText = "X";
+    closeButtonElement.style.background = "transparent";
+    closeButtonElement.style.border = "none";
+    closeButtonElement.style.fontSize = "20px";
+    closeButtonElement.style.fontWeight = "bold";
+    closeButtonElement.style.color = "white";
+    closeButtonElement.style.cursor = "pointer";
+    closeButtonElement.style.cssFloat = "right"; // @ts-ignore
+
+    closeButtonElement.style.styleFloat = "right";
+    closeButtonElement.addEventListener("click", function () {
+      hide();
+    });
+    containerElement.appendChild(headerElement);
+    containerElement.appendChild(closeButtonElement);
+    containerElement.appendChild(document.createElement("br"));
+    containerElement.appendChild(document.createElement("br"));
+    /** @type {Document} */
+
+    /** @type {HTMLIFrameElement} */
+    iframeContainerElement.contentDocument.body.appendChild(containerElement);
+    onLoadQueue.forEach(function (onLoad) {
+      onLoad(
+      /** @type {HTMLDivElement} */
+      containerElement);
+    });
+    onLoadQueue = [];
+    /** @type {HTMLIFrameElement} */
+
+    iframeContainerElement.onload = null;
+  };
+
+  document.body.appendChild(iframeContainerElement);
+}
+/**
+ * @param {(element: HTMLDivElement) => void} callback
+ * @param {string | null} trustedTypesPolicyName
+ */
+
+
+function ensureOverlayExists(callback, trustedTypesPolicyName) {
+  if (containerElement) {
+    // Everything is ready, call the callback right away.
+    callback(containerElement);
+    return;
+  }
+
+  onLoadQueue.push(callback);
+
+  if (iframeContainerElement) {
+    return;
+  }
+
+  createContainer(trustedTypesPolicyName);
+} // Successful compilation.
+
+
+function hide() {
+  if (!iframeContainerElement) {
+    return;
+  } // Clean up and reset internal state.
+
+
+  document.body.removeChild(iframeContainerElement);
+  iframeContainerElement = null;
+  containerElement = null;
+}
+/**
+ * @param {string} type
+ * @param {string  | { file?: string, moduleName?: string, loc?: string, message?: string }} item
+ * @returns {{ header: string, body: string }}
+ */
+
+
+function formatProblem(type, item) {
+  var header = type === "warning" ? "WARNING" : "ERROR";
+  var body = "";
+
+  if (typeof item === "string") {
+    body += item;
+  } else {
+    var file = item.file || ""; // eslint-disable-next-line no-nested-ternary
+
+    var moduleName = item.moduleName ? item.moduleName.indexOf("!") !== -1 ? "".concat(item.moduleName.replace(/^(\s|\S)*!/, ""), " (").concat(item.moduleName, ")") : "".concat(item.moduleName) : "";
+    var loc = item.loc;
+    header += "".concat(moduleName || file ? " in ".concat(moduleName ? "".concat(moduleName).concat(file ? " (".concat(file, ")") : "") : file).concat(loc ? " ".concat(loc) : "") : "");
+    body += item.message || "";
+  }
+
+  return {
+    header: header,
+    body: body
+  };
+} // Compilation with errors (e.g. syntax error or missing modules).
+
+/**
+ * @param {string} type
+ * @param {Array<string  | { file?: string, moduleName?: string, loc?: string, message?: string }>} messages
+ * @param {string | null} trustedTypesPolicyName
+ */
+
+
+function show(type, messages, trustedTypesPolicyName) {
+  ensureOverlayExists(function () {
+    messages.forEach(function (message) {
+      var entryElement = document.createElement("div");
+      var typeElement = document.createElement("span");
+
+      var _formatProblem = formatProblem(type, message),
+          header = _formatProblem.header,
+          body = _formatProblem.body;
+
+      typeElement.innerText = header;
+      typeElement.style.color = "#".concat(colors.red); // Make it look similar to our terminal.
+
+      var text = ansiHTML(encode(body));
+      var messageTextNode = document.createElement("div");
+      messageTextNode.innerHTML = overlayTrustedTypesPolicy ? overlayTrustedTypesPolicy.createHTML(text) : text;
+      entryElement.appendChild(typeElement);
+      entryElement.appendChild(document.createElement("br"));
+      entryElement.appendChild(document.createElement("br"));
+      entryElement.appendChild(messageTextNode);
+      entryElement.appendChild(document.createElement("br"));
+      entryElement.appendChild(document.createElement("br"));
+      /** @type {HTMLDivElement} */
+
+      containerElement.appendChild(entryElement);
+    });
+  }, trustedTypesPolicyName);
+}
+
+export { formatProblem, show, hide };`Wô˝ˇˇz˛ˇˇ∫˝ˇˇú˝ˇˇù˝ˇˇû˝ˇˇü˝ˇˇ†˝ˇˇ°˝ˇˇ¢˝ˇˇ£˝ˇˇ§˝ˇˇ•˝ˇˇñiframeContainerElementêcontainerElementãonLoadQueueôoverlayTrustedTypesPolicyµ˝ˇˇècreateContainer_ˇˇˇÜwindowåtrustedTypesåcreatePolicyäcreateHTMLÙ˝ˇˇIˇˇˇçcreateElementÇidÉsrcÖstyle+˛ˇˇÑleftÉtopÖrightÜbottomÖwidthÜheightÜborderÜzIndexÜonloadècontentDocumentâboxSizingèbackgroundColor≥˝ˇˇäfontFamilyàfontSizeápaddingälineHeightäwhiteSpaceàoverflowçheaderElementâinnerTextícloseButtonElementäbackgroundäfontWeightÜcursoràcssFloatästyleFloat*˛ˇˇˇˇˇãappendChildi˛ˇˇÅ˝ˇˇÜonLoadìensureOverlayExistsàcallbackâ˝ˇˇãremoveChildˇˇˇË˝ˇˇö6ˇˇˇ`˝ˇˇämoduleNameÖ˝ˇˇ»˝ˇˇÅ˝ˇˇÉlocÌ˝ˇˇ
+ˇˇˇàmessagesåentryElementãtypeElement0ˇˇˇy˝ˇˇèmessageTextNodeâinnerHTML`ù˝ˇˇ¬   /*!***********************************************************!*\
+  !*** ./node_modules/webpack-dev-server/client/overlay.js ***!
+  \***********************************************************/
+ú˝ˇˇÎ˛ˇˇú˝ˇˇâ  __webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "formatProblem": () => (/* binding */ formatProblem),
+/* harmony export */   "hide": () => (/* binding */ hide),
+/* harmony export */   "show": () => (/* binding */ show)
+/* harmony export */ });
+/* harmony import */ var ansi_html_community__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ansi-html-community */ 7716);
+/* harmony import */ var ansi_html_community__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(ansi_html_community__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var html_entities__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! html-entities */ 4948);
+/* harmony import */ var html_entities__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(html_entities__WEBPACK_IMPORTED_MODULE_1__);
+û˝ˇˇ  // The error overlay is inspired (and mostly copied) from Create React App (https://github.com/facebookincubator/create-react-app)
+// They, in turn, got inspired by webpack-hot-middleware (https://github.com/glenjamin/webpack-hot-middleware).
+import ansiHTML from "ansi-html-community";
+import { encode } from "html-entities";
+var colors = {
+  reset: ["transparent", "transparent"],
+  black: "181818",
+  red: "E36049",
+  green: "B3CB74",
+  yellow: "FFD080",
+  blue: "7CAFC2",
+  magenta: "7FACCA",
+  cyan: "C3C2EF",
+  lightgrey: "EBE7E3",
+  darkgrey: "6D7891"
+};
+/** @type {HTMLIFrameElement | null | undefined} */
+
+var iframeContainerElement;
+/** @type {HTMLDivElement | null | undefined} */
+
+var containerElement;
+/** @type {Array<(element: HTMLDivElement) => void>} */
+
+var onLoadQueue = [];
+/** @type {TrustedTypePolicy | undefined} */
+
+var overlayTrustedTypesPolicy;
+ansiHTML.setColors(colors);
+/**
+ * @param {string | null} trustedTypesPolicyName
+ */
+
+function createContainer(trustedTypesPolicyName) {
+  // Enable Trusted Types if they are available in the current browser.
+  if (window.trustedTypes) {
+    overlayTrustedTypesPolicy = window.trustedTypes.createPolicy(trustedTypesPolicyName || "webpack-dev-server#overlay", {
+      createHTML: function createHTML(value) {
+        return value;
+      }
+    });
+  }
+
+  iframeContainerElement = document.createElement("iframe");
+  iframeContainerElement.id = "webpack-dev-server-client-overlay";
+  iframeContainerElement.src = "about:blank";
+  iframeContainerElement.style.position = "fixed";
+  iframeContainerElement.style.left = 0;
+  iframeContainerElement.style.top = 0;
+  iframeContainerElement.style.right = 0;
+  iframeContainerElement.style.bottom = 0;
+  iframeContainerElement.style.width = "100vw";
+  iframeContainerElement.style.height = "100vh";
+  iframeContainerElement.style.border = "none";
+  iframeContainerElement.style.zIndex = 9999999999;
+
+  iframeContainerElement.onload = function () {
+    containerElement =
+    /** @type {Document} */
+
+    /** @type {HTMLIFrameElement} */
+    iframeContainerElement.contentDocument.createElement("div");
+    containerElement.id = "webpack-dev-server-client-overlay-div";
+    containerElement.style.position = "fixed";
+    containerElement.style.boxSizing = "border-box";
+    containerElement.style.left = 0;
+    containerElement.style.top = 0;
+    containerElement.style.right = 0;
+    containerElement.style.bottom = 0;
+    containerElement.style.width = "100vw";
+    containerElement.style.height = "100vh";
+    containerElement.style.backgroundColor = "rgba(0, 0, 0, 0.85)";
+    containerElement.style.color = "#E8E8E8";
+    containerElement.style.fontFamily = "Menlo, Consolas, monospace";
+    containerElement.style.fontSize = "large";
+    containerElement.style.padding = "2rem";
+    containerElement.style.lineHeight = "1.2";
+    containerElement.style.whiteSpace = "pre-wrap";
+    containerElement.style.overflow = "auto";
+    var headerElement = document.createElement("span");
+    headerElement.innerText = "Compiled with problems:";
+    var closeButtonElement = document.createElement("button");
+    closeButtonElement.innerText = "X";
+    closeButtonElement.style.background = "transparent";
+    closeButtonElement.style.border = "none";
+    closeButtonElement.style.fontSize = "20px";
+    closeButtonElement.style.fontWeight = "bold";
+    closeButtonElement.style.color = "white";
+    closeButtonElement.style.cursor = "pointer";
+    closeButtonElement.style.cssFloat = "right"; // @ts-ignore
+
+    closeButtonElement.style.styleFloat = "right";
+    closeButtonElement.addEventListener("click", function () {
+      hide();
+    });
+    containerElement.appendChild(headerElement);
+    containerElement.appendChild(closeButtonElement);
+    containerElement.appendChild(document.createElement("br"));
+    containerElement.appendChild(document.createElement("br"));
+    /** @type {Document} */
+
+    /** @type {HTMLIFrameElement} */
+
+    iframeContainerElement.contentDocument.body.appendChild(containerElement);
+    onLoadQueue.forEach(function (onLoad) {
+      onLoad(
+      /** @type {HTMLDivElement} */
+      containerElement);
+    });
+    onLoadQueue = [];
+    /** @type {HTMLIFrameElement} */
+
+    iframeContainerElement.onload = null;
+  };
+
+  document.body.appendChild(iframeContainerElement);
+}
+/**
+ * @param {(element: HTMLDivElement) => void} callback
+ * @param {string | null} trustedTypesPolicyName
+ */
+
+
+function ensureOverlayExists(callback, trustedTypesPolicyName) {
+  if (containerElement) {
+    // Everything is ready, call the callback right away.
+    callback(containerElement);
+    return;
+  }
+
+  onLoadQueue.push(callback);
+
+  if (iframeContainerElement) {
+    return;
+  }
+
+  createContainer(trustedTypesPolicyName);
+} // Successful compilation.
+
+
+function hide() {
+  if (!iframeContainerElement) {
+    return;
+  } // Clean up and reset internal state.
+
+
+  document.body.removeChild(iframeContainerElement);
+  iframeContainerElement = null;
+  containerElement = null;
+}
+/**
+ * @param {string} type
+ * @param {string  | { file?: string, moduleName?: string, loc?: string, message?: string }} item
+ * @returns {{ header: string, body: string }}
+ */
+
+
+function formatProblem(type, item) {
+  var header = type === "warning" ? "WARNING" : "ERROR";
+  var body = "";
+
+  if (typeof item === "string") {
+    body += item;
+  } else {
+    var file = item.file || ""; // eslint-disable-next-line no-nested-ternary
+
+    var moduleName = item.moduleName ? item.moduleName.indexOf("!") !== -1 ? "".concat(item.moduleName.replace(/^(\s|\S)*!/, ""), " (").concat(item.moduleName, ")") : "".concat(item.moduleName) : "";
+    var loc = item.loc;
+    header += "".concat(moduleName || file ? " in ".concat(moduleName ? "".concat(moduleName).concat(file ? " (".concat(file, ")") : "") : file).concat(loc ? " ".concat(loc) : "") : "");
+    body += item.message || "";
+  }
+
+  return {
+    header: header,
+    body: body
+  };
+} // Compilation with errors (e.g. syntax error or missing modules).
+
+/**
+ * @param {string} type
+ * @param {Array<string  | { file?: string, moduleName?: string, loc?: string, message?: string }>} messages
+ * @param {string | null} trustedTypesPolicyName
+ */
+
+
+function show(type, messages, trustedTypesPolicyName) {
+  ensureOverlayExists(function () {
+    messages.forEach(function (message) {
+      var entryElement = document.createElement("div");
+      var typeElement = document.createElement("span");
+
+      var _formatProblem = formatProblem(type, message),
+          header = _formatProblem.header,
+          body = _formatProblem.body;
+
+      typeElement.innerText = header;
+      typeElement.style.color = "#".concat(colors.red); // Make it look similar to our terminal.
+
+      var text = ansiHTML(encode(body));
+      var messageTextNode = document.createElement("div");
+      messageTextNode.innerHTML = overlayTrustedTypesPolicy ? overlayTrustedTypesPolicy.createHTML(text) : text;
+      entryElement.appendChild(typeElement);
+      entryElement.appendChild(document.createElement("br"));
+      entryElement.appendChild(document.createElement("br"));
+      entryElement.appendChild(messageTextNode);
+      entryElement.appendChild(document.createElement("br"));
+      entryElement.appendChild(document.createElement("br"));
+      /** @type {HTMLDivElement} */
+
+      containerElement.appendChild(entryElement);
+    });
+  }, trustedTypesPolicyName);
+}
+
+export { formatProblem, show, hide };ç;  {"version":3,"file":"x","names":["ansiHTML","encode","colors","reset","black","red","green","yellow","blue","magenta","cyan","lightgrey","darkgrey","iframeContainerElement","containerElement","onLoadQueue","overlayTrustedTypesPolicy","setColors","createContainer","trustedTypesPolicyName","window","trustedTypes","createPolicy","createHTML","value","document","createElement","id","src","style","position","left","top","right","bottom","width","height","border","zIndex","onload","contentDocument","boxSizing","backgroundColor","color","fontFamily","fontSize","padding","lineHeight","whiteSpace","overflow","headerElement","innerText","closeButtonElement","background","fontWeight","cursor","cssFloat","styleFloat","addEventListener","hide","appendChild","body","forEach","onLoad","ensureOverlayExists","callback","push","removeChild","formatProblem","type","item","header","file","moduleName","indexOf","concat","replace","loc","message","show","messages","entryElement","typeElement","_formatProblem","text","messageTextNode","innerHTML"],"sources":["webpack://./node_modules/webpack-dev-server/client/overlay.js"],"sourcesContent":["// The error overlay is inspired (and mostly copied) from Create React App (https://github.com/facebookincubator/create-react-app)\n// They, in turn, got inspired by webpack-hot-middleware (https://github.com/glenjamin/webpack-hot-middleware).\nimport ansiHTML from \"ansi-html-community\";\nimport { encode } from \"html-entities\";\nvar colors = {\n  reset: [\"transparent\", \"transparent\"],\n  black: \"181818\",\n  red: \"E36049\",\n  green: \"B3CB74\",\n  yellow: \"FFD080\",\n  blue: \"7CAFC2\",\n  magenta: \"7FACCA\",\n  cyan: \"C3C2EF\",\n  lightgrey: \"EBE7E3\",\n  darkgrey: \"6D7891\"\n};\n/** @type {HTMLIFrameElement | null | undefined} */\n\nvar iframeContainerElement;\n/** @type {HTMLDivElement | null | undefined} */\n\nvar containerElement;\n/** @type {Array<(element: HTMLDivElement) => void>} */\n\nvar onLoadQueue = [];\n/** @type {TrustedTypePolicy | undefined} */\n\nvar overlayTrustedTypesPolicy;\nansiHTML.setColors(colors);\n/**\n * @param {string | null} trustedTypesPolicyName\n */\n\nfunction createContainer(trustedTypesPolicyName) {\n  // Enable Trusted Types if they are available in the current browser.\n  if (window.trustedTypes) {\n    overlayTrustedTypesPolicy = window.trustedTypes.createPolicy(trustedTypesPolicyName || \"webpack-dev-server#overlay\", {\n      createHTML: function createHTML(value) {\n        return value;\n      }\n    });\n  }\n\n  iframeContainerElement = document.createElement(\"iframe\");\n  iframeContainerElement.id = \"webpack-dev-server-client-overlay\";\n  iframeContainerElement.src = \"about:blank\";\n  iframeContainerElement.style.position = \"fixed\";\n  iframeContainerElement.style.left = 0;\n  iframeContainerElement.style.top = 0;\n  iframeContainerElement.style.right = 0;\n  iframeContainerElement.style.bottom = 0;\n  iframeContainerElement.style.width = \"100vw\";\n  iframeContainerElement.style.height = \"100vh\";\n  iframeContainerElement.style.border = \"none\";\n  iframeContainerElement.style.zIndex = 9999999999;\n\n  iframeContainerElement.onload = function () {\n    containerElement =\n    /** @type {Document} */\n\n    /** @type {HTMLIFrameElement} */\n    iframeContainerElement.contentDocument.createElement(\"div\");\n    containerElement.id = \"webpack-dev-server-client-overlay-div\";\n    containerElement.style.position = \"fixed\";\n    containerElement.style.boxSizing = \"border-box\";\n    containerElement.style.left = 0;\n    containerElement.style.top = 0;\n    containerElement.style.right = 0;\n    containerElement.style.bottom = 0;\n    containerElement.style.width = \"100vw\";\n    containerElement.style.height = \"100vh\";\n    containerElement.style.backgroundColor = \"rgba(0, 0, 0, 0.85)\";\n    containerElement.style.color = \"#E8E8E8\";\n    containerElement.style.fontFamily = \"Menlo, Consolas, monospace\";\n    containerElement.style.fontSize = \"large\";\n    containerElement.style.padding = \"2rem\";\n    containerElement.style.lineHeight = \"1.2\";\n    containerElement.style.whiteSpace = \"pre-wrap\";\n    containerElement.style.overflow = \"auto\";\n    var headerElement = document.createElement(\"span\");\n    headerElement.innerText = \"Compiled with problems:\";\n    var closeButtonElement = document.createElement(\"button\");\n    closeButtonElement.innerText = \"X\";\n    closeButtonElement.style.background = \"transparent\";\n    closeButtonElement.style.border = \"none\";\n    closeButtonElement.style.fontSize = \"20px\";\n    closeButtonElement.style.fontWeight = \"bold\";\n    closeButtonElement.style.color = \"white\";\n    closeButtonElement.style.cursor = \"pointer\";\n    closeButtonElement.style.cssFloat = \"right\"; // @ts-ignore\n\n    closeButtonElement.style.styleFloat = \"right\";\n    closeButtonElement.addEventListener(\"click\", function () {\n      hide();\n    });\n    containerElement.appendChild(headerElement);\n    containerElement.appendChild(closeButtonElement);\n    containerElement.appendChild(document.createElement(\"br\"));\n    containerElement.appendChild(document.createElement(\"br\"));\n    /** @type {Document} */\n\n    /** @type {HTMLIFrameElement} */\n    iframeContainerElement.contentDocument.body.appendChild(containerElement);\n    onLoadQueue.forEach(function (onLoad) {\n      onLoad(\n      /** @type {HTMLDivElement} */\n      containerElement);\n    });\n    onLoadQueue = [];\n    /** @type {HTMLIFrameElement} */\n\n    iframeContainerElement.onload = null;\n  };\n\n  document.body.appendChild(iframeContainerElement);\n}\n/**\n * @param {(element: HTMLDivElement) => void} callback\n * @param {string | null} trustedTypesPolicyName\n */\n\n\nfunction ensureOverlayExists(callback, trustedTypesPolicyName) {\n  if (containerElement) {\n    // Everything is ready, call the callback right away.\n    callback(containerElement);\n    return;\n  }\n\n  onLoadQueue.push(callback);\n\n  if (iframeContainerElement) {\n    return;\n  }\n\n  createContainer(trustedTypesPolicyName);\n} // Successful compilation.\n\n\nfunction hide() {\n  if (!iframeContainerElement) {\n    return;\n  } // Clean up and reset internal state.\n\n\n  document.body.removeChild(iframeContainerElement);\n  iframeContainerElement = null;\n  containerElement = null;\n}\n/**\n * @param {string} type\n * @param {string  | { file?: string, moduleName?: string, loc?: string, message?: string }} item\n * @returns {{ header: string, body: string }}\n */\n\n\nfunction formatProblem(type, item) {\n  var header = type === \"warning\" ? \"WARNING\" : \"ERROR\";\n  var body = \"\";\n\n  if (typeof item === \"string\") {\n    body += item;\n  } else {\n    var file = item.file || \"\"; // eslint-disable-next-line no-nested-ternary\n\n    var moduleName = item.moduleName ? item.moduleName.indexOf(\"!\") !== -1 ? \"\".concat(item.moduleName.replace(/^(\\s|\\S)*!/, \"\"), \" (\").concat(item.moduleName, \")\") : \"\".concat(item.moduleName) : \"\";\n    var loc = item.loc;\n    header += \"\".concat(moduleName || file ? \" in \".concat(moduleName ? \"\".concat(moduleName).concat(file ? \" (\".concat(file, \")\") : \"\") : file).concat(loc ? \" \".concat(loc) : \"\") : \"\");\n    body += item.message || \"\";\n  }\n\n  return {\n    header: header,\n    body: body\n  };\n} // Compilation with errors (e.g. syntax error or missing modules).\n\n/**\n * @param {string} type\n * @param {Array<string  | { file?: string, moduleName?: string, loc?: string, message?: string }>} messages\n * @param {string | null} trustedTypesPolicyName\n */\n\n\nfunction show(type, messages, trustedTypesPolicyName) {\n  ensureOverlayExists(function () {\n    messages.forEach(function (message) {\n      var entryElement = document.createElement(\"div\");\n      var typeElement = document.createElement(\"span\");\n\n      var _formatProblem = formatProblem(type, message),\n          header = _formatProblem.header,\n          body = _formatProblem.body;\n\n      typeElement.innerText = header;\n      typeElement.style.color = \"#\".concat(colors.red); // Make it look similar to our terminal.\n\n      var text = ansiHTML(encode(body));\n      var messageTextNode = document.createElement(\"div\");\n      messageTextNode.innerHTML = overlayTrustedTypesPolicy ? overlayTrustedTypesPolicy.createHTML(text) : text;\n      entryElement.appendChild(typeElement);\n      entryElement.appendChild(document.createElement(\"br\"));\n      entryElement.appendChild(document.createElement(\"br\"));\n      entryElement.appendChild(messageTextNode);\n      entryElement.appendChild(document.createElement(\"br\"));\n      entryElement.appendChild(document.createElement(\"br\"));\n      /** @type {HTMLDivElement} */\n\n      containerElement.appendChild(entryElement);\n    });\n  }, trustedTypesPolicyName);\n}\n\nexport { formatProblem, show, hide };"],"mappings":"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"}  false243285undefined287325undefined871888ansi_html_community__WEBPACK_IMPORTED_MODULE_0___default().setColorsundefined67396746ansi_html_community__WEBPACK_IMPORTED_MODULE_0___default()undefined67486753(0,html_entities__WEBPACK_IMPORTED_MODULE_1__.encode)undefined74057441undefinedü˝ˇˇ†˝ˇˇ   ,
+
+/***/ 9178:
+   ∂}  ´webpack/lib/util/registerExternalSerializerúwebpack-sources/ConcatSourceÄ´webpack/lib/util/registerExternalSerializerôwebpack-sources/RawSourceø   /*!**********************************************************!*\
+  !*** ./node_modules/webpack-dev-server/client/socket.js ***!
+  \**********************************************************/
+´webpack/lib/util/registerExternalSerializerúwebpack-sources/CachedSource   ˛L  ´webpack/lib/util/registerExternalSerializerúwebpack-sources/ConcatSourceÄ´webpack/lib/util/registerExternalSerializerôwebpack-sources/RawSource_   /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+´webpack/lib/util/registerExternalSerializerúwebpack-sources/CachedSource   Ñ  ´webpack/lib/util/registerExternalSerializerúwebpack-sources/ConcatSourceÄ´webpack/lib/util/registerExternalSerializerôwebpack-sources/RawSourceπ  __webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "client": () => (/* binding */ client),
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _clients_WebSocketClient_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./clients/WebSocketClient.js */ 5218);
+/* harmony import */ var _utils_log_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./utils/log.js */ 4664);
+/* provided dependency */ var __webpack_dev_server_client__ = __webpack_require__(/*! ./node_modules/webpack-dev-server/client/clients/WebSocketClient.js */ 5218);
+´webpack/lib/util/registerExternalSerializerùwebpack-sources/ReplaceSource´webpack/lib/util/registerExternalSerializerüwebpack-sources/SourceMapSourceÒ  /* global __webpack_dev_server_client__ */
+import WebSocketClient from "./clients/WebSocketClient.js";
+import { log } from "./utils/log.js"; // this WebsocketClient is here as a default fallback, in case the client is not injected
+
+/* eslint-disable camelcase */
+
+var Client = // eslint-disable-next-line no-nested-ternary
+typeof __webpack_dev_server_client__ !== "undefined" ? typeof __webpack_dev_server_client__.default !== "undefined" ? __webpack_dev_server_client__.default : __webpack_dev_server_client__ : WebSocketClient;
+/* eslint-enable camelcase */
+
+var retries = 0;
+var maxRetries = 10; // Initialized client is exported so external consumers can utilize the same instance
+// It is mutable to enforce singleton
+// eslint-disable-next-line import/no-mutable-exports
+
+export var client = null;
+/**
+ * @param {string} url
+ * @param {{ [handler: string]: (data?: any, params?: any) => any }} handlers
+ * @param {number} [reconnect]
+ */
+
+var socket = function initSocket(url, handlers, reconnect) {
+  client = new Client(url);
+  client.onOpen(function () {
+    retries = 0;
+
+    if (typeof reconnect !== "undefined") {
+      maxRetries = reconnect;
+    }
+  });
+  client.onClose(function () {
+    if (retries === 0) {
+      handlers.close();
+    } // Try to reconnect.
+
+
+    client = null; // After 10 retries stop trying, to prevent logspam.
+
+    if (retries < maxRetries) {
+      // Exponentially increase timeout to reconnect.
+      // Respectfully copied from the package `got`.
+      // eslint-disable-next-line no-restricted-properties
+      var retryInMs = 1000 * Math.pow(2, retries) + Math.random() * 100;
+      retries += 1;
+      log.info("Trying to reconnect...");
+      setTimeout(function () {
+        socket(url, handlers, reconnect);
+      }, retryInMs);
+    }
+  });
+  client.onMessage(
+  /**
+   * @param {any} data
+   */
+  function (data) {
+    var message = JSON.parse(data);
+
+    if (handlers[message.type]) {
+      handlers[message.type](message.data, message.params);
+    }
+  });
+};
+
+export default socket;„   webpack://./node_modules/@angular-devkit/build-angular/src/babel/webpack-loader.js??ruleSet[1].rules[2].use[0]!./node_modules/source-map-loader/dist/cjs.js??ruleSet[1].rules[3]!./node_modules/webpack-dev-server/client/socket.jsW  {"version":3,"file":"x","names":["WebSocketClient","log","Client","__webpack_dev_server_client__","default","retries","maxRetries","client","socket","initSocket","url","handlers","reconnect","onOpen","onClose","close","retryInMs","Math","pow","random","info","setTimeout","onMessage","data","message","JSON","parse","type","params"],"sources":["webpack://./node_modules/webpack-dev-server/client/socket.js"],"sourcesContent":["/* global __webpack_dev_server_client__ */\nimport WebSocketClient from \"./clients/WebSocketClient.js\";\nimport { log } from \"./utils/log.js\"; // this WebsocketClient is here as a default fallback, in case the client is not injected\n\n/* eslint-disable camelcase */\n\nvar Client = // eslint-disable-next-line no-nested-ternary\ntypeof __webpack_dev_server_client__ !== \"undefined\" ? typeof __webpack_dev_server_client__.default !== \"undefined\" ? __webpack_dev_server_client__.default : __webpack_dev_server_client__ : WebSocketClient;\n/* eslint-enable camelcase */\n\nvar retries = 0;\nvar maxRetries = 10; // Initialized client is exported so external consumers can utilize the same instance\n// It is mutable to enforce singleton\n// eslint-disable-next-line import/no-mutable-exports\n\nexport var client = null;\n/**\n * @param {string} url\n * @param {{ [handler: string]: (data?: any, params?: any) => any }} handlers\n * @param {number} [reconnect]\n */\n\nvar socket = function initSocket(url, handlers, reconnect) {\n  client = new Client(url);\n  client.onOpen(function () {\n    retries = 0;\n\n    if (typeof reconnect !== \"undefined\") {\n      maxRetries = reconnect;\n    }\n  });\n  client.onClose(function () {\n    if (retries === 0) {\n      handlers.close();\n    } // Try to reconnect.\n\n\n    client = null; // After 10 retries stop trying, to prevent logspam.\n\n    if (retries < maxRetries) {\n      // Exponentially increase timeout to reconnect.\n      // Respectfully copied from the package `got`.\n      // eslint-disable-next-line no-restricted-properties\n      var retryInMs = 1000 * Math.pow(2, retries) + Math.random() * 100;\n      retries += 1;\n      log.info(\"Trying to reconnect...\");\n      setTimeout(function () {\n        socket(url, handlers, reconnect);\n      }, retryInMs);\n    }\n  });\n  client.onMessage(\n  /**\n   * @param {any} data\n   */\n  function (data) {\n    var message = JSON.parse(data);\n\n    if (handlers[message.type]) {\n      handlers[message.type](message.data, message.params);\n    }\n  });\n};\n\nexport default socket;"],"mappings":"AAAA;AACA,OAAOA,eAAP,MAA4B,8BAA5B;AACA,SAASC,GAAT,QAAoB,gBAApB,C,CAAsC;;AAEtC;;AAEA,IAAIC,MAAM,GAAG;AACb,OAAOC,6BAAP,KAAyC,WAAzC,GAAuD,OAAOA,6BAA6B,CAACC,OAArC,KAAiD,WAAjD,GAA+DD,6BAA6B,CAACC,OAA7F,GAAuGD,6BAA9J,GAA8LH,eAD9L;AAEA;;AAEA,IAAIK,OAAO,GAAG,CAAd;AACA,IAAIC,UAAU,GAAG,EAAjB,C,CAAqB;AACrB;AACA;;AAEA,OAAO,IAAIC,MAAM,GAAG,IAAb;AACP;AACA;AACA;AACA;AACA;;AAEA,IAAIC,MAAM,GAAG,SAASC,UAAT,CAAoBC,GAApB,EAAyBC,QAAzB,EAAmCC,SAAnC,EAA8C;EACzDL,MAAM,GAAG,IAAIL,MAAJ,CAAWQ,GAAX,CAAT;EACAH,MAAM,CAACM,MAAP,CAAc,YAAY;IACxBR,OAAO,GAAG,CAAV;;IAEA,IAAI,OAAOO,SAAP,KAAqB,WAAzB,EAAsC;MACpCN,UAAU,GAAGM,SAAb;IACD;EACF,CAND;EAOAL,MAAM,CAACO,OAAP,CAAe,YAAY;IACzB,IAAIT,OAAO,KAAK,CAAhB,EAAmB;MACjBM,QAAQ,CAACI,KAAT;IACD,CAHwB,CAGvB;;;IAGFR,MAAM,GAAG,IAAT,CANyB,CAMV;;IAEf,IAAIF,OAAO,GAAGC,UAAd,EAA0B;MACxB;MACA;MACA;MACA,IAAIU,SAAS,GAAG,OAAOC,IAAI,CAACC,GAAL,CAAS,CAAT,EAAYb,OAAZ,CAAP,GAA8BY,IAAI,CAACE,MAAL,KAAgB,GAA9D;MACAd,OAAO,IAAI,CAAX;MACAJ,GAAG,CAACmB,IAAJ,CAAS,wBAAT;MACAC,UAAU,CAAC,YAAY;QACrBb,MAAM,CAACE,GAAD,EAAMC,QAAN,EAAgBC,SAAhB,CAAN;MACD,CAFS,EAEPI,SAFO,CAAV;IAGD;EACF,CAnBD;EAoBAT,MAAM,CAACe,SAAP;EACA;AACF;AACA;EACE,UAAUC,IAAV,EAAgB;IACd,IAAIC,OAAO,GAAGC,IAAI,CAACC,KAAL,CAAWH,IAAX,CAAd;;IAEA,IAAIZ,QAAQ,CAACa,OAAO,CAACG,IAAT,CAAZ,EAA4B;MAC1BhB,QAAQ,CAACa,OAAO,CAACG,IAAT,CAAR,CAAuBH,OAAO,CAACD,IAA/B,EAAqCC,OAAO,CAACI,MAA7C;IACD;EACF,CAVD;AAWD,CAxCD;;AA0CA,eAAepB,MAAf"}c+egSã   J  f  Å  ù  π  ’  ·  ˝      
+    o  v  €  È  €  È          ¬ü@ÄÄù__webpack_dev_server_client__ˇˇˇ√_clients_WebSocketClient_js__WEBPACK_IMPORTED_MODULE_0__["default"]Ä≥_utils_log_js__WEBPACK_IMPORTED_MODULE_1__.log.info¡/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (ÄÇ);ÄÜbufferÜsourceÑsizeÑmapsÑhash’
+  __webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "client": () => (/* binding */ client),
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _clients_WebSocketClient_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./clients/WebSocketClient.js */ 5218);
+/* harmony import */ var _utils_log_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./utils/log.js */ 4664);
+/* provided dependency */ var __webpack_dev_server_client__ = __webpack_require__(/*! ./node_modules/webpack-dev-server/client/clients/WebSocketClient.js */ 5218);
+/* global __webpack_dev_server_client__ */
+
+ // this WebsocketClient is here as a default fallback, in case the client is not injected
+
+/* eslint-disable camelcase */
+
+var Client = // eslint-disable-next-line no-nested-ternary
+typeof __webpack_dev_server_client__ !== "undefined" ? typeof __webpack_dev_server_client__.default !== "undefined" ? __webpack_dev_server_client__.default : __webpack_dev_server_client__ : _clients_WebSocketClient_js__WEBPACK_IMPORTED_MODULE_0__["default"];
+/* eslint-enable camelcase */
+
+var retries = 0;
+var maxRetries = 10; // Initialized client is exported so external consumers can utilize the same instance
+// It is mutable to enforce singleton
+// eslint-disable-next-line import/no-mutable-exports
+
+var client = null;
+/**
+ * @param {string} url
+ * @param {{ [handler: string]: (data?: any, params?: any) => any }} handlers
+ * @param {number} [reconnect]
+ */
+
+var socket = function initSocket(url, handlers, reconnect) {
+  client = new Client(url);
+  client.onOpen(function () {
+    retries = 0;
+
+    if (typeof reconnect !== "undefined") {
+      maxRetries = reconnect;
+    }
+  });
+  client.onClose(function () {
+    if (retries === 0) {
+      handlers.close();
+    } // Try to reconnect.
+
+
+    client = null; // After 10 retries stop trying, to prevent logspam.
+
+    if (retries < maxRetries) {
+      // Exponentially increase timeout to reconnect.
+      // Respectfully copied from the package `got`.
+      // eslint-disable-next-line no-restricted-properties
+      var retryInMs = 1000 * Math.pow(2, retries) + Math.random() * 100;
+      retries += 1;
+      _utils_log_js__WEBPACK_IMPORTED_MODULE_1__.log.info("Trying to reconnect...");
+      setTimeout(function () {
+        socket(url, handlers, reconnect);
+      }, retryInMs);
+    }
+  });
+  client.onMessage(
+  /**
+   * @param {any} data
+   */
+  function (data) {
+    var message = JSON.parse(data);
+
+    if (handlers[message.type]) {
+      handlers[message.type](message.data, message.params);
+    }
+  });
+};
+
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (socket);Äî{"finalSource":true}ÉmapãbufferedMapáversionÑfileàmappingsásourcesésourcesContentÖnamesÅx   ;;;;;;;;AAAA;AACA;CACsC;;AAEtC;;AAEA,IAAIE,MAAM,GAAG;AACb,OAAOC,6BAAP,KAAyC,WAAzC,GAAuD,OAAOA,6BAA6B,CAACC,OAArC,KAAiD,WAAjD,GAA+DD,6BAA6B,CAACC,OAA7F,GAAuGD,6BAA9J,GAA8LH,mEAD9L;AAEA;;AAEA,IAAIK,OAAO,GAAG,CAAd;AACA,IAAIC,UAAU,GAAG,EAAjB,EAAqB;AACrB;AACA;;AAEO,IAAIC,MAAM,GAAG,IAAb;AACP;AACA;AACA;AACA;AACA;;AAEA,IAAIC,MAAM,GAAG,SAASC,UAAT,CAAoBC,GAApB,EAAyBC,QAAzB,EAAmCC,SAAnC,EAA8C;EACzDL,MAAM,GAAG,IAAIL,MAAJ,CAAWQ,GAAX,CAAT;EACAH,MAAM,CAACM,MAAP,CAAc,YAAY;IACxBR,OAAO,GAAG,CAAV;;IAEA,IAAI,OAAOO,SAAP,KAAqB,WAAzB,EAAsC;MACpCN,UAAU,GAAGM,SAAb;IACD;EACF,CAND;EAOAL,MAAM,CAACO,OAAP,CAAe,YAAY;IACzB,IAAIT,OAAO,KAAK,CAAhB,EAAmB;MACjBM,QAAQ,CAACI,KAAT;IACD,CAHwB,CAGvB;;;IAGFR,MAAM,GAAG,IAAT,CANyB,CAMV;;IAEf,IAAIF,OAAO,GAAGC,UAAd,EAA0B;MACxB;MACA;MACA;MACA,IAAIU,SAAS,GAAG,OAAOC,IAAI,CAACC,GAAL,CAAS,CAAT,EAAYb,OAAZ,CAAP,GAA8BY,IAAI,CAACE,MAAL,KAAgB,GAA9D;MACAd,OAAO,IAAI,CAAX;MACAJ,mDAAA,CAAS,wBAAT;MACAoB,UAAU,CAAC,YAAY;QACrBb,MAAM,CAACE,GAAD,EAAMC,QAAN,EAAgBC,SAAhB,CAAN;MACD,CAFS,EAEPI,SAFO,CAAV;IAGD;EACF,CAnBD;EAoBAT,MAAM,CAACe,SAAP;EACA;AACF;AACA;EACE,UAAUC,IAAV,EAAgB;IACd,IAAIC,OAAO,GAAGC,IAAI,CAACC,KAAL,CAAWH,IAAX,CAAd;;IAEA,IAAIZ,QAAQ,CAACa,OAAO,CAACG,IAAT,CAAZ,EAA4B;MAC1BhB,QAAQ,CAACa,OAAO,CAACG,IAAT,CAAR,CAAuBH,OAAO,CAACD,IAA/B,EAAqCC,OAAO,CAACI,MAA7C;IACD;EACF,CAVD;AAWD,CAxCD;;AA0CA,iEAAepB,MAAfºwebpack://./node_modules/webpack-dev-server/client/socket.jsÒ  /* global __webpack_dev_server_client__ */
+import WebSocketClient from "./clients/WebSocketClient.js";
+import { log } from "./utils/log.js"; // this WebsocketClient is here as a default fallback, in case the client is not injected
+
+/* eslint-disable camelcase */
+
+var Client = // eslint-disable-next-line no-nested-ternary
+typeof __webpack_dev_server_client__ !== "undefined" ? typeof __webpack_dev_server_client__.default !== "undefined" ? __webpack_dev_server_client__.default : __webpack_dev_server_client__ : WebSocketClient;
+/* eslint-enable camelcase */
+
+var retries = 0;
+var maxRetries = 10; // Initialized client is exported so external consumers can utilize the same instance
+// It is mutable to enforce singleton
+// eslint-d

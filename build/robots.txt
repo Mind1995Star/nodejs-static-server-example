@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: http://Mind1995Star.github.io/sitemap_index.xml
